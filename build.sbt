@@ -4,7 +4,7 @@ organization := "com.alexdupre"
 
 version := "3.0"
 
-javacOptions ++= Seq("-source", "11", "-target", "11")
+javacOptions ++= Seq("--release", "11")
 
 crossPaths := false // drop off Scala suffix from artifact names
 autoScalaLibrary := false // exclude scala-library from dependencies
