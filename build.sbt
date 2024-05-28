@@ -4,7 +4,10 @@ organization := "com.alexdupre"
 
 version := "3.0"
 
-autoScalaLibrary := false
+javacOptions ++= Seq("-source", "11", "-target", "11")
+
+crossPaths := false // drop off Scala suffix from artifact names
+autoScalaLibrary := false // exclude scala-library from dependencies
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.6"
 
