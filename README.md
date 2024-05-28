@@ -3,44 +3,32 @@ Logback log appender for AWS CloudWatch
 
 # Background
 
-This package provides a logback appender that writes its log events to Cloudwatch.  Before you say it,
-there seem to be many projects like this out there but I could find none of them that were
-self-contained and that were published to the central Maven repo.
+This package provides a logback appender that writes its log events to Cloudwatch.
 
-* Code available from the [git repository](https://github.com/j256/cloudwatch-logback-appender).  [![CircleCI](https://circleci.com/gh/j256/cloudwatch-logback-appender.svg?style=svg)](https://circleci.com/gh/j256/cloudwatch-logback-appender) [![CodeCov](https://img.shields.io/codecov/c/github/j256/cloudwatch-logback-appender.svg)](https://codecov.io/github/j256/cloudwatch-logback-appender/)
-* Maven packages are published via [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.j256.cloudwatchlogbackappender/cloudwatchlogbackappender/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.j256.cloudwatchlogbackappender/cloudwatchlogbackappender/) [![javadoc](https://javadoc.io/badge2/com.j256.cloudwatchlogbackappender/cloudwatchlogbackappender/javadoc.svg)](https://javadoc.io/doc/com.j256.cloudwatchlogbackappender/cloudwatchlogbackappender)
+Before you say it, there seem to be many projects like this out there but I could find none of them that were
+self-contained, using the latest logback version and the new AWS SDK 2.x, and that were published to the central
+Maven repo.  This project is a fork of the great [work](https://github.com/j256/cloudwatch-logback-appender) done by Gray Watson.
 
-Enjoy. Gray Watson
+* Code available from the [git repository](https://github.com/j256/cloudwatch-logback-appender).  ![example workflow](https://github.com/alexdupre/cloudwatch-logback-appender/actions/workflows/test.yml/badge.svg)
+* Maven packages are published via [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.alexdupre/cloudwatch-logback-appender/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.j256.cloudwatchlogbackappender/cloudwatchlogbackappender/) [![javadoc](https://javadoc.io/badge2/com.alexdupre/cloudwatch-logback-appender/javadoc.svg)](https://javadoc.io/doc/com.j256.cloudwatchlogbackappender/cloudwatchlogbackappender)
 
-# Maven Configuration
+Enjoy.
 
-``` xml
-<dependencies>
-	<dependency>
-		<groupId>com.j256.cloudwatchlogbackappender</groupId>
-		<artifactId>cloudwatchlogbackappender</artifactId>
-		<!-- NOTE: change the version to the most recent release version from the repo -->
-		<version>2.0</version>
-	</dependency>
-</dependencies>
+# SBT Configuration
+
+``` sbt
+// NOTE: change the version to the most recent release version from the repo
+
+libraryDependencies += "com.alexdupre" % "cloudwatch-logback-appender" % "3.0"
 ```
 
 ## Dependencies
 
-By default the appender has dependencies on logback (duh) but also the log (cloudwatch) and ec2 AWS SDK
-packages.  You can add a exclusion for these packages if you want to depend on different versions.
+By default the appender has dependencies on logback (duh) but also the cloudwatchlogs, ec2 and imds AWS SDK 2.x
+packages.  You can add an exclusion for these packages if you want to depend on different versions.
 
-``` xml
-<dependency>
-	<groupId>com.amazonaws</groupId>
-	<artifactId>aws-java-sdk-logs</artifactId>
-	<version>1.11.914</version>
-</dependency>
-<dependency>
-	<groupId>com.amazonaws</groupId>
-	<artifactId>aws-java-sdk-ec2</artifactId>
-	<version>1.11.914</version>
-</dependency>
+``` sbt
+libraryDependencies ++= Seq("cloudwatchlogs", "ec2", "imds").map(service => "software.amazon.awssdk" % service % "2.25.60")
 ```
 
 # logback.xml Configuration
@@ -59,8 +47,8 @@ Minimal logback appender configuration:
 </appender>
 ```
 
-Cloudwatch unfortunately does not allow multiple hosts to write to the same log-stream.  If multiple servers are writing
-logs, you should configure the log-stream name with an instance-name suffix or something.  The `logStream` name setting
+Cloudwatch allows multiple hosts to write to the same log-stream.  Alternatively,
+you can configure the log-stream name with an instance-name suffix or something similar.  The `logStream` name setting
 uses the `Ec2PatternLayout` to generate the name, which can also be used to format your log lines.  This allows you to
 use the standard `%token` such as `%date` in the name of the log-stream – see the
 [logback documentation](http://logback.qos.ch/manual/layouts.html#conversionWord).  The `Ec2PatternLayout` class also
@@ -101,7 +89,7 @@ supports the EC2MetadataUtils methods for looking up the information.  You can c
 `Ec2InstanceNameConverter.setInstanceName(...)` or `Ec2InstanceIdConverter.setInstanceId(...)` early in your
 program if you want to set them yourself. 
 
-**NOTE:** `logGroup` must match the regex pattern `[\.\-_/#A-Za-z0-9]+`.  `logStream` cannot contain the ':' character
+**NOTE:** `logGroup` must match the regex pattern `[.\-_/#A-Za-z0-9]+`.  `logStream` cannot contain the ':' character
 which will be replaced by '_'.
 
 The appender also adds the support for the previous list of % tokens to be expanded on each log line:
@@ -199,9 +187,36 @@ if you want the appender to query for the ec2 instance name it is on – see `Ec
 }
 ```
 
-I couldn't figure out how to restrict to all ec2 instances.  If you are only doing log requests then
-you should be able to limit it to the resource `arn:aws:logs:*:*:*`.
+To restrict access to a specific and existing log group you should use a policy like this:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:::log-group:test",
+                "arn:aws:logs:::log-group:test:log-stream:*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:DescribeLogGroups",
+                "ec2:DescribeTags"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
 
 # ChangeLog Release Notes
 
-See the [ChangeLog.txt file](src/main/javadoc/doc-files/changelog.txt).
+See the [CHANGES.txt](CHANGES.txt) file.
