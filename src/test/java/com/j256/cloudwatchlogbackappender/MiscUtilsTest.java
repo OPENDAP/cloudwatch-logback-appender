@@ -12,7 +12,5 @@ public class MiscUtilsTest {
 		assertTrue(MiscUtils.isBlank(""));
 		assertTrue(MiscUtils.isBlank(" "));
 		assertFalse(MiscUtils.isBlank("s"));
-		// coverage
-		new MiscUtils();
 	}
 }

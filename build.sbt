@@ -4,9 +4,11 @@ version := "0.0.1-SNAPSHOT"
 
 autoScalaLibrary := false
 
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.5"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.6"
 
-libraryDependencies ++= Seq("logs", "ec2").map(service => "com.amazonaws" % s"aws-java-sdk-$service" % "1.11.914")
+libraryDependencies ++= Seq("cloudwatchlogs", "ec2", "imds").map(service => "software.amazon.awssdk" % service % "2.25.60")
 
 libraryDependencies += "com.github.sbt" % "junit-interface" % "0.13.3" % Test
 libraryDependencies += "org.easymock" % "easymock" % "5.2.0" % Test
+
+fork := true

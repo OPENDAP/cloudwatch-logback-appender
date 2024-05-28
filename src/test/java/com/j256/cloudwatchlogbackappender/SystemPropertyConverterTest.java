@@ -9,16 +9,17 @@ import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import org.easymock.IAnswer;
 import org.junit.Test;
-
-import com.amazonaws.services.logs.AWSLogsClient;
-import com.amazonaws.services.logs.model.PutLogEventsRequest;
-import com.amazonaws.services.logs.model.PutLogEventsResult;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.LoggingEvent;
+
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.cloudwatchlogs.model.PutLogEventsRequest;
+import software.amazon.awssdk.services.cloudwatchlogs.model.PutLogEventsResponse;
+
+import java.util.Collections;
 
 public class SystemPropertyConverterTest extends BaseConverterTest {
 
@@ -29,7 +30,7 @@ public class SystemPropertyConverterTest extends BaseConverterTest {
 		String propValue = System.getProperty(propName);
 		assertNotNull(propValue);
 
-		AWSLogsClient awsLogClient = createMock(AWSLogsClient.class);
+		CloudWatchLogsClient awsLogClient = createMock(CloudWatchLogsClient.class);
 		appender.setAwsLogsClient(awsLogClient);
 
 		String prefix = "logstream-";
@@ -46,19 +47,16 @@ public class SystemPropertyConverterTest extends BaseConverterTest {
 		event.setLoggerName("name");
 		event.setLevel(Level.DEBUG);
 		event.setMessage("message");
+		event.setMDCPropertyMap(Collections.emptyMap());
 
-		final PutLogEventsResult result = new PutLogEventsResult();
-		result.setNextSequenceToken("ewopjfewfj");
-		expect(awsLogClient.putLogEvents(isA(PutLogEventsRequest.class))).andAnswer(new IAnswer<PutLogEventsResult>() {
-			@Override
-			public PutLogEventsResult answer() {
-				PutLogEventsRequest request = (PutLogEventsRequest) getCurrentArguments()[0];
-				assertEquals(LOG_GROUP, request.getLogGroupName());
-				assertEquals(expectedLogStream, request.getLogStreamName());
-				return result;
-			}
+		final PutLogEventsResponse response = PutLogEventsResponse.builder().build();
+		expect(awsLogClient.putLogEvents(isA(PutLogEventsRequest.class))).andAnswer(() -> {
+			PutLogEventsRequest request = (PutLogEventsRequest) getCurrentArguments()[0];
+			assertEquals(LOG_GROUP, request.logGroupName());
+			assertEquals(expectedLogStream, request.logStreamName());
+			return response;
 		});
-		awsLogClient.shutdown();
+		awsLogClient.close();
 
 		// =====================================
 
@@ -75,7 +73,7 @@ public class SystemPropertyConverterTest extends BaseConverterTest {
 	@Test(timeout = 5000)
 	public void testNoEnvNameSpecified() throws InterruptedException {
 
-		AWSLogsClient awsLogClient = createMock(AWSLogsClient.class);
+		CloudWatchLogsClient awsLogClient = createMock(CloudWatchLogsClient.class);
 		appender.setAwsLogsClient(awsLogClient);
 
 		String prefix = "logstream-";
@@ -92,19 +90,16 @@ public class SystemPropertyConverterTest extends BaseConverterTest {
 		event.setLoggerName("name");
 		event.setLevel(Level.DEBUG);
 		event.setMessage("message");
+		event.setMDCPropertyMap(Collections.emptyMap());
 
-		final PutLogEventsResult result = new PutLogEventsResult();
-		result.setNextSequenceToken("ewopjfewfj");
-		expect(awsLogClient.putLogEvents(isA(PutLogEventsRequest.class))).andAnswer(new IAnswer<PutLogEventsResult>() {
-			@Override
-			public PutLogEventsResult answer() {
-				PutLogEventsRequest request = (PutLogEventsRequest) getCurrentArguments()[0];
-				assertEquals(LOG_GROUP, request.getLogGroupName());
-				assertEquals(expectedLogStream, request.getLogStreamName());
-				return result;
-			}
+		final PutLogEventsResponse response = PutLogEventsResponse.builder().build();
+		expect(awsLogClient.putLogEvents(isA(PutLogEventsRequest.class))).andAnswer(() -> {
+			PutLogEventsRequest request = (PutLogEventsRequest) getCurrentArguments()[0];
+			assertEquals(LOG_GROUP, request.logGroupName());
+			assertEquals(expectedLogStream, request.logStreamName());
+			return response;
 		});
-		awsLogClient.shutdown();
+		awsLogClient.close();
 
 		// =====================================
 
@@ -121,7 +116,7 @@ public class SystemPropertyConverterTest extends BaseConverterTest {
 	@Test(timeout = 5000)
 	public void testUnknownEnvNameSpecified() throws InterruptedException {
 
-		AWSLogsClient awsLogClient = createMock(AWSLogsClient.class);
+		CloudWatchLogsClient awsLogClient = createMock(CloudWatchLogsClient.class);
 		appender.setAwsLogsClient(awsLogClient);
 
 		String prefix = "logstream-";
@@ -138,19 +133,16 @@ public class SystemPropertyConverterTest extends BaseConverterTest {
 		event.setLoggerName("name");
 		event.setLevel(Level.DEBUG);
 		event.setMessage("message");
+		event.setMDCPropertyMap(Collections.emptyMap());
 
-		final PutLogEventsResult result = new PutLogEventsResult();
-		result.setNextSequenceToken("ewopjfewfj");
-		expect(awsLogClient.putLogEvents(isA(PutLogEventsRequest.class))).andAnswer(new IAnswer<PutLogEventsResult>() {
-			@Override
-			public PutLogEventsResult answer() {
-				PutLogEventsRequest request = (PutLogEventsRequest) getCurrentArguments()[0];
-				assertEquals(LOG_GROUP, request.getLogGroupName());
-				assertEquals(expectedLogStream, request.getLogStreamName());
-				return result;
-			}
+		final PutLogEventsResponse response = PutLogEventsResponse.builder().build();
+		expect(awsLogClient.putLogEvents(isA(PutLogEventsRequest.class))).andAnswer(() -> {
+			PutLogEventsRequest request = (PutLogEventsRequest) getCurrentArguments()[0];
+			assertEquals(LOG_GROUP, request.logGroupName());
+			assertEquals(expectedLogStream, request.logStreamName());
+			return response;
 		});
-		awsLogClient.shutdown();
+		awsLogClient.close();
 
 		// =====================================
 

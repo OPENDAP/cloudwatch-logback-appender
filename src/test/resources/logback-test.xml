@@ -18,7 +18,7 @@
 		<initialWaitTimeMillis>1000</initialWaitTimeMillis>
 		<maxBatchTimeMillis>1000</maxBatchTimeMillis>
 		<printRejectedEvents>true</printRejectedEvents>
-		<ec2MetadataServiceOverride>http://invalid.j256.com</ec2MetadataServiceOverride>
+		<ec2MetadataServiceEndpoint>http://invalid.j256.com</ec2MetadataServiceEndpoint>
 		<!-- emergency appender -->
 		<appender-ref ref="STDOUT" />
 	</appender>

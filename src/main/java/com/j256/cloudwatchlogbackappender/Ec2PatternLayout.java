@@ -10,7 +10,7 @@ import ch.qos.logback.classic.PatternLayout;
  */
 public class Ec2PatternLayout extends PatternLayout {
 
-	{
+	static {
 		DEFAULT_CONVERTER_MAP.put("instance", Ec2InstanceNameConverter.class.getName());
 		DEFAULT_CONVERTER_MAP.put("instanceName", Ec2InstanceNameConverter.class.getName());
 		DEFAULT_CONVERTER_MAP.put("in", Ec2InstanceNameConverter.class.getName());
