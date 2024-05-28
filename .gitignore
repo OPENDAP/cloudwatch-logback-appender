@@ -1,4 +1,21 @@
-/target/
+# sbt
+/.bsp
+target/
+
+# IDEA
+/.idea
+
+# vscode+metals
+.vscode/
+.metals/
+.bloop/
+.ammonite/
+metals.sbt
+
+# Eclipse
 /.settings/
 /.classpath
 /.project
+
+# scripts
+/*.sh
