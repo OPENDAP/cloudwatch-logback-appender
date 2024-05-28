@@ -9,7 +9,7 @@ Before you say it, there seem to be many projects like this out there but I coul
 self-contained, using the latest logback version and the new AWS SDK 2.x, and that were published to the central
 Maven repo.  This project is a fork of the great [work](https://github.com/j256/cloudwatch-logback-appender) done by Gray Watson.
 
-* Code available from the [git repository](https://github.com/j256/cloudwatch-logback-appender).  ![example workflow](https://github.com/alexdupre/cloudwatch-logback-appender/actions/workflows/test.yml/badge.svg)
+* Code available from the [git repository](https://github.com/alexdupre/cloudwatch-logback-appender).  ![example workflow](https://github.com/alexdupre/cloudwatch-logback-appender/actions/workflows/test.yml/badge.svg)
 * Maven packages are published via [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.alexdupre/cloudwatch-logback-appender/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.j256.cloudwatchlogbackappender/cloudwatchlogbackappender/) [![javadoc](https://javadoc.io/badge2/com.alexdupre/cloudwatch-logback-appender/javadoc.svg)](https://javadoc.io/doc/com.j256.cloudwatchlogbackappender/cloudwatchlogbackappender)
 
 Enjoy.
