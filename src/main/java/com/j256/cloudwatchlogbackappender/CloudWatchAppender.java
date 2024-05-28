@@ -1,6 +1,5 @@
 package com.j256.cloudwatchlogbackappender;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,7 +22,6 @@ import ch.qos.logback.core.spi.AppenderAttachable;
 import org.slf4j.Marker;
 
 import software.amazon.awssdk.auth.credentials.*;
-import software.amazon.awssdk.awscore.AwsRequest;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.imds.Ec2MetadataClient;
@@ -614,7 +612,9 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 				}
 			}
 			if (createLogDests) {
-				callLogClientMethod(client, "createLogGroup", CreateLogGroupRequest.builder().logGroupName(logGroupName).build());
+				CreateLogGroupRequest createRequest = CreateLogGroupRequest.builder().logGroupName(logGroupName).build();
+				client.createLogGroup(createRequest);
+				appendEvent(Level.INFO, "Created log-group '" + logGroupName + "'", null);
 			} else {
 				appendEvent(Level.WARN, "Log-group '" + logGroupName + "' doesn't exist and not created", null);
 			}
@@ -630,7 +630,9 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 				}
 			}
 			if (createLogDests) {
-				callLogClientMethod(client, "createLogStream", CreateLogStreamRequest.builder().logGroupName(logGroupName).logStreamName(logStreamName).build());
+				CreateLogStreamRequest createRequest = CreateLogStreamRequest.builder().logGroupName(logGroupName).logStreamName(logStreamName).build();
+				client.createLogStream(createRequest);
+				appendEvent(Level.INFO, "Created log-stream '" + logStreamName + "' for group '" + logGroupName + "'", null);
 			} else {
 				appendEvent(Level.WARN, "Log-stream '" + logStreamName + "' doesn't exist and not created", null);
 			}
@@ -660,28 +662,6 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 			// replace the only character that cloudwatch barfs on: Member must satisfy regex pattern: [^:*]*
 			name = name.replace(':', '_');
 			return name;
-		}
-
-		/**
-		 * This is a hack to work around the problems that were introduced when the appender was compiled with AWS SDK
-		 * version 1.9 or 1.10 but the user was running with version 1.11.
-		 * 
-		 * The problem was that the createLogStream() method added a return object somewhere between 1.10 and 1.11 which
-		 * broke backwards compatibility and the applications would throw NoSuchMethodError. Using reflection causes the
-		 * linkage to be weaker and seems to work.
-		 */
-		private void callLogClientMethod(CloudWatchLogsClient client, String methodName, AwsRequest arg) {
-			try {
-				Method method = client.getClass().getMethod(methodName, arg.getClass());
-				method.invoke(client, arg);
-				appendEvent(Level.INFO, "Ran log client method " + methodName + ", arg " + arg, null);
-			} catch (Exception e) {
-				if (emergencyAppender != null) {
-					emergencyAppender.addError("Problems running log-client method: " + methodName + ", arg: " + arg,
-							e);
-				}
-				appendEvent(Level.ERROR, "Problems running log-client method: " + methodName + ", arg: " + arg, e);
-			}
 		}
 
 		private void lookupInstanceName(AwsCredentialsProvider credentialProvider) {
