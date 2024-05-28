@@ -554,7 +554,7 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 					logEvents.add(logEvent);
 				}
 				// events must be in sorted order according to AWS otherwise an exception is thrown
-				Collections.sort(logEvents, inputLogEventComparator);
+				logEvents.sort(inputLogEventComparator);
 
 				PutLogEventsRequest request = PutLogEventsRequest.builder().logGroupName(logGroupName).logStreamName(logStreamName).logEvents(logEvents).build();
 				awsLogsClient.putLogEvents(request);
