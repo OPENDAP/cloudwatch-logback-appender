@@ -35,7 +35,6 @@ import ch.qos.logback.core.status.Status;
 
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.*;
-import software.amazon.awssdk.services.ec2.Ec2Client;
 
 public class CloudWatchAppenderTest {
 
@@ -374,9 +373,7 @@ public class CloudWatchAppenderTest {
 	public void testMoreAwsCalls() throws InterruptedException {
 		CloudWatchAppender appender = new CloudWatchAppender();
 		CloudWatchLogsClient logsClient = createMock(CloudWatchLogsClient.class);
-		Ec2Client ec2Client = createMock(Ec2Client.class);
 		appender.setTestAwsLogsClient(logsClient);
-		appender.setTestAmazonEc2Client(ec2Client);
 
 		appender.setMaxBatchSize(1);
 		appender.setRegion("region");
@@ -421,7 +418,7 @@ public class CloudWatchAppenderTest {
 
 		// =====================================
 
-		replay(logsClient, ec2Client);
+		replay(logsClient);
 		appender.start();
 		// for coverage
 		appender.start();
@@ -432,16 +429,14 @@ public class CloudWatchAppenderTest {
 			Thread.sleep(100);
 		}
 		appender.stop();
-		verify(logsClient, ec2Client);
+		verify(logsClient);
 	}
 
 	@Test(timeout = 10000)
 	public void testMoreAwsCallsMissingGroupAndStream() throws InterruptedException {
 		CloudWatchAppender appender = new CloudWatchAppender();
 		CloudWatchLogsClient logsClient = createMock(CloudWatchLogsClient.class);
-		Ec2Client ec2Client = createMock(Ec2Client.class);
 		appender.setTestAwsLogsClient(logsClient);
-		appender.setTestAmazonEc2Client(ec2Client);
 
 		appender.setMaxBatchSize(1);
 		appender.setRegion("region");
@@ -492,7 +487,7 @@ public class CloudWatchAppenderTest {
 
 		// =====================================
 
-		replay(logsClient, ec2Client);
+		replay(logsClient);
 		appender.start();
 		// for coverage
 		appender.start();
@@ -503,7 +498,7 @@ public class CloudWatchAppenderTest {
 			Thread.sleep(100);
 		}
 		appender.stop();
-		verify(logsClient, ec2Client);
+		verify(logsClient);
 	}
 
 	@Test(timeout = 10000)

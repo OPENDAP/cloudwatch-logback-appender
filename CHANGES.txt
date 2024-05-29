@@ -1,3 +1,7 @@
+3.1: 5/29/2024
+	* Removed dependency on ec2, try to get instance name from metadata.
+	* Gracefully stop the worker thread, by sending pending log events on shutdown.
+
 3.0: 5/28/2024
 	* Updated to use AWS SDK 2.x.
 	* Updated to use Logback 1.5.x.

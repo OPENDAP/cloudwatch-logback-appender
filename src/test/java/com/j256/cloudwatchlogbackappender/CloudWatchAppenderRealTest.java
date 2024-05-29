@@ -19,6 +19,6 @@ public class CloudWatchAppenderRealTest {
 		logger.error("Here's a throw", new RuntimeException(new Exception("test exception here")));
 		Thread.sleep(1000);
 		logger.info("more stuff");
-		Thread.sleep(10000000);
+		Thread.sleep(10000);
 	}
 }

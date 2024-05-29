@@ -24,11 +24,11 @@ libraryDependencies += "com.alexdupre" % "cloudwatch-logback-appender" % "3.0"
 
 ## Dependencies
 
-By default the appender has dependencies on logback (duh) but also the cloudwatchlogs, ec2 and imds AWS SDK 2.x
+By default the appender has dependencies on logback (duh) but also the cloudwatchlogs and imds AWS SDK 2.x
 packages.  You can add an exclusion for these packages if you want to depend on different versions.
 
 ``` sbt
-libraryDependencies ++= Seq("cloudwatchlogs", "ec2", "imds").map(service => "software.amazon.awssdk" % service % "2.25.60")
+libraryDependencies ++= Seq("cloudwatchlogs", "imds").map(service => "software.amazon.awssdk" % service % "2.25.60")
 ```
 
 # logback.xml Configuration
@@ -162,8 +162,7 @@ the hacker only have limited access to our AWS services.  To get the appender to
 the following IAM policy is required to create the log group and put log events to CloudWatch.
 
 The `logs:CreateLogGroup` and `logs:CreateLogStream` actions are only required if the appender is creating the
-log-group and stream itself (see `createLogDests` option above).  The `ec2:DescribeTags` action is only required
-if you want the appender to query for the ec2 instance name it is on – see `Ec2PatternLayout` above.
+log-group and stream itself (see `createLogDests` option above).
 
 ```json
 {
@@ -176,8 +175,7 @@ if you want the appender to query for the ec2 instance name it is on – see `Ec
                 "logs:CreateLogStream",
                 "logs:DescribeLogGroups",
                 "logs:DescribeLogStreams",
-                "logs:PutLogEvents",
-                "ec2:DescribeTags"
+                "logs:PutLogEvents"
             ],
             "Resource": [
                 "*"
@@ -208,14 +206,18 @@ To restrict access to a specific and existing log group you should use a policy 
         {
             "Effect": "Allow",
             "Action": [
-                "logs:DescribeLogGroups",
-                "ec2:DescribeTags"
+                "logs:DescribeLogGroups"
             ],
             "Resource": "*"
         }
     ]
 }
 ```
+
+## EC2 Permissions
+
+If you want the appender to query for the ec2 instance name it is on (see `Ec2PatternLayout` above), then you need to
+[allow access to tags in instance metadata](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#allow-access-to-tags-in-IMDS).
 
 # ChangeLog Release Notes
 

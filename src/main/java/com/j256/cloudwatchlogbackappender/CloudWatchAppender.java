@@ -29,15 +29,10 @@ import software.amazon.awssdk.imds.Ec2MetadataResponse;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.*;
-import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.ec2.model.DescribeTagsRequest;
-import software.amazon.awssdk.services.ec2.model.DescribeTagsResponse;
-import software.amazon.awssdk.services.ec2.model.Filter;
-import software.amazon.awssdk.services.ec2.model.TagDescription;
 
 /**
  * CloudWatch log appender for logback.
- * 
+ *
  * @author graywatson
  */
 public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent>
@@ -85,7 +80,6 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 
 	private CloudWatchLogsClient awsLogsClient;
 	private CloudWatchLogsClient testAwsLogsClient;
-	private Ec2Client testAmazonEc2Client;
 	private volatile long eventsWrittenCount;
 
 	private BlockingQueue<ILoggingEvent> loggingEventQueue;
@@ -133,6 +127,15 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 		cloudWatchWriterThread = new Thread(new CloudWatchWriter(), getClass().getSimpleName());
 		cloudWatchWriterThread.setDaemon(true);
 		cloudWatchWriterThread.start();
+
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			cloudWatchWriterThread.interrupt();
+			try {
+				cloudWatchWriterThread.join(5000);
+			} catch (InterruptedException e) {
+				// ignore
+			}
+		}));
 
 		if (emergencyAppender != null && !emergencyAppender.isStarted()) {
 			emergencyAppender.start();
@@ -280,11 +283,6 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 	// not required, for testing purposes
 	void setTestAwsLogsClient(CloudWatchLogsClient testAwsLogsClient) {
 		this.testAwsLogsClient = testAwsLogsClient;
-	}
-
-	// not required, for testing purposes
-	void setTestAmazonEc2Client(Ec2Client testAmazonEc2Client) {
-		this.testAmazonEc2Client = testAmazonEc2Client;
 	}
 
 	public void setMaxEventMessageSize(int maxEventMessageSize) {
@@ -450,16 +448,15 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 
 		@Override
 		public void run() {
-
+			Thread thread = Thread.currentThread();
 			try {
 				Thread.sleep(initialWaitTimeMillis);
 			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				thread.interrupt();
 				return;
 			}
 
 			List<ILoggingEvent> events = new ArrayList<>(maxBatchSize);
-			Thread thread = Thread.currentThread();
 			while (!thread.isInterrupted()) {
 				long batchTimeout = System.currentTimeMillis() + maxBatchTimeMillis;
 				while (!thread.isInterrupted()) {
@@ -471,7 +468,7 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 					try {
 						loggingEvent = loggingEventQueue.poll(timeoutMillis, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException ex) {
-						Thread.currentThread().interrupt();
+						thread.interrupt();
 						break;
 					}
 					if (loggingEvent == null) {
@@ -593,7 +590,7 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 				client = testAwsLogsClient;
 			}
 			try {
-				lookupInstanceName(credentialProvider);
+				lookupInstanceName();
 			} catch (Exception e) {
 				appendEvent(Level.ERROR, "Problems looking up instance-name", e);
 			}
@@ -664,47 +661,28 @@ public class CloudWatchAppender extends UnsynchronizedAppenderBase<ILoggingEvent
 			return name;
 		}
 
-		private void lookupInstanceName(AwsCredentialsProvider credentialProvider) {
-			Ec2MetadataClient client = Ec2MetadataClient.create();
-			Ec2MetadataResponse response = client.get("/latest/instance-id");
-			String instanceId =	response.asString();
-			if (instanceId == null) {
-				return;
-			}
-			Ec2InstanceIdConverter.setInstanceId(instanceId);
-			Ec2Client ec2Client = null;
-			try {
-				if (testAmazonEc2Client == null) {
-					ec2Client = Ec2Client.builder()
-							.credentialsProvider(credentialProvider)
-							.region(Region.of(region))
-							.build();
-				} else {
-					ec2Client = testAmazonEc2Client;
+		private void lookupInstanceName() {
+			try (Ec2MetadataClient client = Ec2MetadataClient.create()) {
+				Ec2MetadataResponse response = client.get("/latest/meta-data/instance-id");
+				String instanceId = response.asString();
+				if (instanceId == null) {
+					return;
 				}
-				DescribeTagsRequest request = DescribeTagsRequest.builder().filters(
-						Filter.builder().name("resource-type").values("instance").build(),
-						Filter.builder().name("resource-id").values(instanceId).build()
-					).build();
-				DescribeTagsResponse result = ec2Client.describeTags(request);
-				List<TagDescription> tags = result.tags();
-				for (TagDescription tag : tags) {
-					if ("Name".equals(tag.key())) {
-						String instanceName = tag.value();
+				Ec2InstanceIdConverter.setInstanceId(instanceId);
+				try {
+					response = client.get("/latest/meta-data/tags/instance/Name");
+					String instanceName = response.asString().trim();
+					if (!instanceName.isEmpty()) {
 						Ec2InstanceNameConverter.setInstanceName(instanceName);
 						return;
 					}
+					appendEvent(Level.INFO, "Could not find EC2 instance name", null);
+				} catch (AwsServiceException ase) {
+					appendEvent(Level.WARN, "Looking up EC2 instance-name threw", ase);
 				}
-				appendEvent(Level.INFO, "Could not find EC2 instance name in tags: " + tags, null);
-			} catch (AwsServiceException ase) {
-				appendEvent(Level.WARN, "Looking up EC2 instance-name threw", ase);
-			} finally {
-				if (ec2Client != null) {
-					ec2Client.close();
-				}
+				// if we can't lookup the instance name then set it as the instance-id
+				Ec2InstanceNameConverter.setInstanceName(instanceId);
 			}
-			// if we can't lookup the instance name then set it as the instance-id
-			Ec2InstanceNameConverter.setInstanceName(instanceId);
 		}
 
 		private void appendEvent(Level level, String message, Throwable th) {
