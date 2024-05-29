@@ -19,7 +19,7 @@ public class Ec2InstanceIdConverter extends ClassicConverter {
 		return instanceId;
 	}
 
-	static void setInstanceId(String instanceId) {
+	public static void setInstanceId(String instanceId) {
 		if (instanceId == null) {
 			Ec2InstanceIdConverter.instanceId = DEFAULT_INSTANCE_ID;
 		} else {

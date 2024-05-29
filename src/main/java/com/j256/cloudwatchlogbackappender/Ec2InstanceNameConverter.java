@@ -19,7 +19,7 @@ public class Ec2InstanceNameConverter extends ClassicConverter {
 		return instanceName;
 	}
 
-	static void setInstanceName(String instanceName) {
+	public static void setInstanceName(String instanceName) {
 		if (instanceName == null) {
 			Ec2InstanceNameConverter.instanceName = DEFAULT_INSTANCE_NAME;
 		} else {
