@@ -2,7 +2,7 @@ name := "cloudwatch-logback-appender"
 
 organization := "com.alexdupre"
 
-version := "3.0"
+version := "3.1"
 
 javacOptions ++= Seq("--release", "11")
 

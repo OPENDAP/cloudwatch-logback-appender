@@ -19,7 +19,7 @@ Enjoy.
 ``` sbt
 // NOTE: change the version to the most recent release version from the repo
 
-libraryDependencies += "com.alexdupre" % "cloudwatch-logback-appender" % "3.0"
+libraryDependencies += "com.alexdupre" % "cloudwatch-logback-appender" % "3.1" % Runtime
 ```
 
 ## Dependencies
